@@ -201,7 +201,7 @@ args = parser.parse_args()
 def main():
     if 'func' not in args:
         parser.error("No command was set.")
-    logging.basicConfig(format='%(asctime)s [%(levelname)s] %(name)s - %(message)s', level=args.log_level)
+    logging.basicConfig(format='%(asctime)s [%(levelname)s] %(name)s - %(message)s', level=args.log_level.upper())
     logging.getLogger('requests').setLevel(logging.WARNING)
 
     q = _get_query()
