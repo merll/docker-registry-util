@@ -145,7 +145,7 @@ parser.add_argument('--no-raise-intersecting-repo', action='store_false', defaul
                     dest='raise_intersecting_repo',
                     help="Do not raise errors when repositories share digests, if the former are not part of the same "
                          "query. If set, digests shared by multiple, partially non-listed repositories are ignored.")
-parser.add_argument('--log_level', '-l', default=logging.INFO,
+parser.add_argument('--log-level', '-l', default='info',
                     help="Output log level.")
 subparsers = parser.add_subparsers(title='command', description="Type of operation to perform.")
 parser_list_repos = subparsers.add_parser('list-repo-names',
