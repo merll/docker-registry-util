@@ -5,6 +5,8 @@ import logging
 import os
 import re
 
+from requests.auth import HTTPBasicAuth, HTTPDigestAuth
+
 from .client import DockerRegistryClient
 from .query import DockerRegistryQuery
 from .remover import DockerRegistryRemover
@@ -33,11 +35,21 @@ def _get_query():
         base_url = registry
     else:
         base_url = 'https://{0}'.format(registry)
+    kwargs = {}
     if args.user:
-        auth = (args.user, args.password)
-    else:
-        auth = None
-    client = DockerRegistryClient(base_url, auth=auth)
+        if args.digest_auth:
+            kwargs['auth'] = HTTPDigestAuth(args.user, args.password)
+        else:
+            kwargs['auth'] = HTTPBasicAuth(args.user, args.password)
+    if args.verify is not None:
+        kwargs['verify'] = value_or_false(args.verify)
+    if args.client_cert:
+        if args.client_key:
+            kwargs['cert'] = (args.client_cert, args.client_key)
+        else:
+            kwargs['cert'] = args.client_cert
+
+    client = DockerRegistryClient(base_url, **kwargs)
     query = DockerRegistryQuery(client)
     cache_fn = _get_cache_name(registry)
     if cache_fn and os.path.isfile(cache_fn) and not args.refresh:
@@ -138,6 +150,16 @@ parser.add_argument('--user', '-u', default=os.getenv('REGISTRY_USER'),
                     help="Registry user. Can also be set using environment variable REGISTRY_USER.")
 parser.add_argument('--password', '-p', default=os.getenv('REGISTRY_PASSWORD'),
                     help="Registry password. Can also be set using environment variable REGISTRY_PASSWORD.")
+parser.add_argument('--digest-auth', default=os.getenv('REGISTRY_USE_DIGEST_AUTH'),
+                    help="Use HTTP Digest Authentication instead of plain basic auth.")
+parser.add_argument('--client-cert', '-cert', default=os.getenv('REGISTRY_CLIENT_CERT'),
+                    help="Path to a file that contains a client-side certificate. It also needs to include the key, "
+                         "or the key needs to be passed separately using '-key'.")
+parser.add_argument('--client-key', '-key', default=os.getenv('REGISTRY_CLIENT_KEY'),
+                    help="Path to a file that contains the key to the client certificate used in '-cert'.")
+parser.add_argument('--verify', '-v',
+                    help="Bundle of trusted certificate authorities for verifying a SSL certificate. If set to 'None', "
+                         "verification is disabled (not recommended).")
 parser.add_argument('--cache', '-c', default=os.getenv('DOCKER_UTIL_CACHEFILE'),
                     help="Cache file to use for speeding up multiple calls. Can be set to 'None' to deactivate.")
 parser.add_argument('--refresh', action='store_true', default=False,
