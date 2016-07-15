@@ -12,12 +12,16 @@ from .remover import DockerRegistryRemover
 RE_REPLACE_PATTERN = re.compile('(?:.+//)(.*)')
 
 
+def value_or_false(value):
+    if not value or str(value).lower() in ('false', '0', 'no', 'none'):
+        return False
+    return value
+
+
 def _get_cache_name(registry):
-    if args.cache and args.cache.lower() not in ('false', '0', 'no', 'none'):
-        return None
-    elif args.cache is None:
+    if args.cache is None:
         return '{0}_cache.json'.format(RE_REPLACE_PATTERN.sub(r'\1', registry).replace('/', '_').replace('.', '_'))
-    return args.cache
+    return value_or_false(args.cache)
 
 
 def _get_query():
