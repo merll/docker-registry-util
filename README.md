@@ -48,23 +48,31 @@ This library is implemented in Python 3. After [downloading and installing Pytho
 installation is simply done via `pip`:
 
 ```bash
+pip install docker-registry-util
+```
+
+for installing the latest release or
+
+```bash
 pip install git+https://github.com/merll/docker-registry-util.git
 ```
+
+for installing the latest development version.
 
 # Getting started
 
 The library first needs to know how to connect to your registry. The following can be set via the command line or
 through environment variables:
 
-| Environment variable | Command line arg. | Description |
-| --- | --- | --- |
-| REGISTRY | -reg | Registry server to connect to. |
-| REGISTRY_USER | -u | User for basic authentication. |
-| REGISTRY_PASSWORD | -p | Password for basic authentication. |
-| REGISTRY_USE_DIGEST_AUTH | --digest-auth | Use HTTP Digest Authentication instead of basic auth. |
-| REGISTRY_CLIENT_CERT | -cert | Client certificate (and optionally key) for the registry. |
-| REGISTRY_CLIENT_KEY | -key | Key for the client certificate, if not included in the -cert file. |
-| REQUESTS_CA_BUNDLE | -v | Alternative bundle of certificate authorities for validating the registry. |
+| Environment variable     | Command line arg. | Description                        |
+| ------------------------ | ----------------- | ---------------------------------- |
+| REGISTRY                 | -reg              | Registry server to connect to.     |
+| REGISTRY_USER            | -u                | User for basic authentication.     |
+| REGISTRY_PASSWORD        | -p                | Password for basic authentication. |
+| REGISTRY_USE_DIGEST_AUTH | --digest-auth     | Use HTTP Digest Authentication instead of basic auth. |
+| REGISTRY_CLIENT_CERT     | -cert             | Client certificate (and optionally key) for the registry. |
+| REGISTRY_CLIENT_KEY      | -key              | Key for the client certificate, if not included in the -cert file. |
+| REQUESTS_CA_BUNDLE       | -v                | Alternative bundle of certificate authorities for validating the registry. |
 
 With this basic configuration, you can query the registry contents via the command line, e.g.
 
