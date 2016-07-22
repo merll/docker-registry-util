@@ -16,7 +16,7 @@ def include_readme():
     doc = pandoc.Document()
     with open(readme_file, 'r') as rf:
         doc.markdown = rf.read().encode()
-        return doc.rst
+        return doc.rst.decode()
 
 
 setup(
