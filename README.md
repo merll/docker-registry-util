@@ -27,6 +27,14 @@ Other than the Docker API, which tells all the tags of a certain image id, the R
 and tags and shows the associated digest. Technically an identical digest can even be shared by multiple repositories.
 If we want to remove an image, we want to make sure that we do not destroy unknown repositories and tags.
 
+This utility presents this relation in both ways. When a tag is selected for deletion, its related digests are
+reverse-checked for an association with any other repository and tag.
+
+The entire registry tags and digests are read, and then stored locally in order to speed up further processes.
+Therefore, the aforementioned reverse-check may take place on outdated information. It is recommended to update the
+cache frequently using the  `--refresh` argument and - like the Docker Registry garbage collection - only perform any
+change operations under low or no traffic on the registry.
+
 # Registry configuration
 In order for this tool to work, the Docker Registry needs to be configured for allowing deletion. In the configuration
 file, add the following:
