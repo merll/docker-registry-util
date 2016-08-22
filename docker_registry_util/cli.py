@@ -1,17 +1,19 @@
 #!/usr/bin/env python
 
 import argparse
+import json
 import logging
 import os
 import re
 
-from requests.auth import HTTPBasicAuth, HTTPDigestAuth
+from requests.auth import AuthBase, HTTPBasicAuth, HTTPDigestAuth
 
 from .client import DockerRegistryClient
 from .query import DockerRegistryQuery
 from .remover import DockerRegistryRemover
 
 RE_REPLACE_PATTERN = re.compile('(?:.+//)(.*)')
+DOCKER_CONFIG_FILE = os.path.expanduser('~/.docker/config.json')
 
 
 def value_or_false(value):
@@ -24,6 +26,21 @@ def _get_cache_name(registry):
     if args.cache is None:
         return '{0}_cache.json'.format(RE_REPLACE_PATTERN.sub(r'\1', registry).replace('/', '_').replace('.', '_'))
     return value_or_false(args.cache)
+
+
+def _get_auth_config(registry):
+    try:
+        with open(DOCKER_CONFIG_FILE) as config_file:
+            config_data = json.load(config_file)
+    except (IOError, json.JSONDecodeError):
+        return None
+    auth_data = config_data.get('auths')
+    if not auth_data:
+        return None
+    registry_data = auth_data.get(registry)
+    if not registry_data:
+        return None
+    return registry_data.get('auth')
 
 
 def _get_query():
@@ -41,6 +58,10 @@ def _get_query():
             kwargs['auth'] = HTTPDigestAuth(args.user, args.password)
         else:
             kwargs['auth'] = HTTPBasicAuth(args.user, args.password)
+    elif os.path.isfile(DOCKER_CONFIG_FILE):
+        config_auth = _get_auth_config(registry)
+        if config_auth:
+            kwargs['auth'] = HTTPBase64Auth(config_auth)
     if args.verify is not None:
         kwargs['verify'] = value_or_false(args.verify)
     if args.client_cert:
@@ -98,6 +119,25 @@ def _show_count(item_type, res):
     print(status_str)
 
 
+class HTTPBase64Auth(AuthBase):
+    """
+    Similar to HTTPBasicAuth, but handles the base64 encoded string directly instead of dividing it into user name
+    and password.
+    """
+    def __init__(self, auth):
+        self.auth = auth
+
+    def __eq__(self, other):
+        return self.auth == getattr(other, 'auth', None)
+
+    def __ne__(self, other):
+        return not self == other
+
+    def __call__(self, r):
+        r.headers['Authorization'] = 'Basic {0}'.format(self.auth)
+        return r
+
+
 def list_repo_names(query):
     result = query.get_repo_names()
     for repo in result:
@@ -145,11 +185,13 @@ def remove_tags(query):
 
 parser = argparse.ArgumentParser(description="Lists or removes tags by selection from a Docker Registry.")
 parser.add_argument('--registry', '-reg', default=os.getenv('REGISTRY'),
-                    help="Registry name.")
+                    help="Registry name. Can also be set using the environment variable REGISTRY.")
 parser.add_argument('--user', '-u', default=os.getenv('REGISTRY_USER'),
-                    help="Registry user. Can also be set using environment variable REGISTRY_USER.")
+                    help="Registry user. Can also be set using the environment variable REGISTRY_USER. If neither is "
+                         "provided, attempts to read authentication from the Docker CLI config in "
+                         "'{0}'".format(DOCKER_CONFIG_FILE))
 parser.add_argument('--password', '-p', default=os.getenv('REGISTRY_PASSWORD'),
-                    help="Registry password. Can also be set using environment variable REGISTRY_PASSWORD.")
+                    help="Registry password. Can also be set using the environment variable REGISTRY_PASSWORD.")
 parser.add_argument('--digest-auth', default=os.getenv('REGISTRY_USE_DIGEST_AUTH'),
                     help="Use HTTP Digest Authentication instead of plain basic auth.")
 parser.add_argument('--client-cert', '-cert', default=os.getenv('REGISTRY_CLIENT_CERT'),

@@ -82,6 +82,9 @@ through environment variables:
 | REGISTRY_CLIENT_KEY      | -key              | Key for the client certificate, if not included in the -cert file. |
 | REQUESTS_CA_BUNDLE       | -v                | Alternative bundle of certificate authorities for validating the registry. |
 
+The `REGISTRY` / `-reg` specification is required. If `REGISTRY_USER` / `-u` is not specified, the tool attempts to
+look up authentication information from the local Docker CLI configuration (`~/.docker/config.json`). 
+
 With this basic configuration, you can query the registry contents via the command line, e.g.
 
 ```bash
