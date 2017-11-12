@@ -69,6 +69,8 @@ def _get_query():
             kwargs['cert'] = (args.client_cert, args.client_key)
         else:
             kwargs['cert'] = args.client_cert
+    if args.use_get_manifest:
+        kwargs['use_get_manifest'] = True
 
     client = DockerRegistryClient(base_url, **kwargs)
     query = DockerRegistryQuery(client)
@@ -213,6 +215,11 @@ parser.add_argument('--no-raise-intersecting-repo', action='store_false', defaul
                     dest='raise_intersecting_repo',
                     help="Do not raise errors when repositories share digests, if the former are not part of the same "
                          "query. If set, digests shared by multiple, partially non-listed repositories are ignored.")
+parser.add_argument('--use-get-manifest', action='store_true', default=os.getenv('DOCKER_UTIL_GET_MANIFEST'),
+                    dest='use_get_manifest',
+                    help="Use the HTTP GET method instead of the default HEAD for retrieving content digests. This "
+                         "fetches some unused information, but may be required for compatibility with certain "
+                         "products, e.g. Nexus Repository.")
 parser.add_argument('--log-level', '-l', default='info',
                     help="Output log level.")
 subparsers = parser.add_subparsers(title='command', description="Type of operation to perform.")

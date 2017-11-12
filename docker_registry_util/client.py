@@ -13,15 +13,21 @@ class DockerRegistryClient(object):
     :param base_url: Base URL to the Docker Registry, excluding the ``v2`` path. E.g. if your registry is
       ``registry.example.com``, the base URL should be ``https://registry.example.com``.
     :type base_url: str
+    :param use_get_manifest: In case of a HEAD request on manifests, uses a GET request instead for compatibility
+      with some servers.
     :param kwargs: Additional keyword arguments (e.g. for authentication), which are set as attributes on to
       the :class:`requests.Session` instance.
     """
-    def __init__(self, base_url, **kwargs):
+    def __init__(self, base_url, use_get_manifest=False, **kwargs):
         self._base_url = base_url
         self._session = requests.Session()
         self._session.headers = {
             'Accept': 'application/vnd.docker.distribution.manifest.v2+json',
         }
+        if use_get_manifest:
+            self._head_manifest_method = 'GET'
+        else:
+            self._head_manifest_method = 'HEAD'
         for k, v in kwargs.items():
             setattr(self._session, k, v)
 
@@ -68,7 +74,7 @@ class DockerRegistryClient(object):
         return self._request('GET', name, 'manifests', reference)
 
     def head_manifest(self, name, reference):
-        return self._request('HEAD', name, 'manifests', reference)
+        return self._request(self._head_manifest_method, name, 'manifests', reference)
 
     def put_manifest(self, name, reference):
         return self._request('PUT', name, 'manifests', reference)

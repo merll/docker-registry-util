@@ -175,6 +175,15 @@ is specified.
 This behavior can be changed generally using the `--no-match-all-tags` command line option. You can also raise an error
 on the event of unexpected intersections using the `--raise-intersecting-tag` argument.
 
+# Additional environment variables
+
+The following settings from the command line can also be set in an environment variable.
+
+| Environment variable     | Command line arg.  | Description                        |
+| ------------------------ | ------------------ | ---------------------------------- |
+| DOCKER_UTIL_CACHEFILE    | -c                 | Cache file to use. Set to 'None' to deactivate. |
+| DOCKER_UTIL_GET_MANIFEST | --use-get-manifest | Uses the HTTP 'GET' method for fetching content digests. The default is using HEAD. |
+
 # Further information
 
 A complete reference to available commands and arguments is available via `dregutil --help`, or
