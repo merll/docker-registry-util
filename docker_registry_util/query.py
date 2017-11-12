@@ -103,7 +103,7 @@ class DockerRegistryQuery(object):
             for tag in tags:
                 manifest = self._client.head_manifest(repo, tag)
                 digest = manifest.headers['Docker-Content-Digest']
-                log.info("Registering digest for %s:%s - %s.", repo, tag, digest)
+                log.debug("Registering digest for %s:%s - %s.", repo, tag, digest)
                 self._cache.add_image(repo, tag, ContentDigest.from_sha256(digest))
         log.info("Cache init completed.")
         self._initialized = True
@@ -122,7 +122,7 @@ class DockerRegistryQuery(object):
                 if _any_tag_matches(tag_funcs, tag):
                     manifest = self._client.head_manifest(repo, tag)
                     digest = manifest.headers['Docker-Content-Digest']
-                    log.info("Registering digest for %s:%s - %s.", repo, tag, digest)
+                    log.debug("Registering digest for %s:%s - %s.", repo, tag, digest)
                     self._cache.update_image(repo, tag, ContentDigest.from_sha256(digest))
 
     def select_repositories(self, names, raise_intersecting_repo=True):
