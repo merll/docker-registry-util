@@ -95,7 +95,7 @@ class DockerRegistryQuery(object):
         repos = self._client.get_catalog().json()['repositories']
         log.info("Found %s repositories.", len(repos))
         for repo in repos:
-            log.info("Checking respository '%s'.", repo)
+            log.info("Checking repository '%s'.", repo)
             tags = self._client.get_tags(repo).json()['tags']
             if not tags:
                 log.info("No tags found for '%s', skipping.", repo)
@@ -112,7 +112,7 @@ class DockerRegistryQuery(object):
         log.info("Updating cache.")
         tag_funcs = _generate_tag_funcs(tags)
         for repo in _str_or_list(repos):
-            log.info("Checking respository '%s'.", repo)
+            log.info("Checking repository '%s'.", repo)
             available_tags = self._client.get_tags(repo).json()['tags']
             if not available_tags:
                 log.info("No tags found for '%s', skipping.", repo)
