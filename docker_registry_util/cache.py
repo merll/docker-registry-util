@@ -213,22 +213,25 @@ class ImageDigestCache(object):
         """
         return sorted(self._tag_digests.keys())
 
-    def get_tag_names(self, repos=None):
+    def get_tag_names(self, repos=None, tag_sort_key=None, reverse_sort=False):
         """
         Returns a sorted list of available tags, optionally filtered by a set of repository names.
 
         :param repos: Optional list or other iterable of repository names to limit the output.
         :type repos: list[str] | tuple[str] | set[str] | NoneType
+        :param tag_sort_key: Optional function to use for sorting the tags.
+        :type reverse_sort: Revert the sort order.
+        :param reverse_sort: bool
         :return: List with tuples of repositories and tags.
         :rtype: list[(str, str)]
         """
         if repos:
             return [(repo, tag)
                     for repo in repos
-                    for tag in sorted(self._tag_digests[repo].keys())]
+                    for tag in sorted(self._tag_digests[repo].keys(), key=tag_sort_key, reverse=reverse_sort)]
         return [(repo, tag)
                 for repo, tag_repos in sorted(self._tag_digests.items(), key=_get_first)
-                for tag in sorted(tag_repos.keys())]
+                for tag in sorted(tag_repos.keys(), key=tag_sort_key, reverse=reverse_sort)]
 
     @classmethod
     def _load(cls, tag_digests):

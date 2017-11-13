@@ -148,7 +148,7 @@ def list_repo_names(query):
 
 
 def list_tag_names(query):
-    result = query.get_tag_names(args.repo)
+    result = query.get_tag_names(args.repo, args.reverse_sort)
     repo_len = max([len(r[0]) for r in result])
     for repo, tag_name in result:
         print('{0:{1}}  {2}'.format(repo, repo_len, tag_name))
@@ -248,6 +248,9 @@ for subparser in [parser_query_repos, parser_query_tags, parser_remove_repos, pa
                            help="Repository names.")
 parser_list_tags.add_argument('repo', nargs='*',
                               help="Optional repository names to filter on.")
+parser_list_tags.add_argument('--reverse-sort', action='store_true', default=False,
+                              dest='reverse_sort',
+                              help="Reverts the sort order of tags within a repository.")
 for subparser in [parser_query_tags, parser_remove_tags]:
     subparser.add_argument('--tags', '-t', nargs='*',
                            help="Tag names or version selectors. Versions can be specified as comparisons, e.g. "

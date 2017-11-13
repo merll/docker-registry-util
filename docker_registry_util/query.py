@@ -77,6 +77,36 @@ class IntersectionError(Exception):
         return self.args[2]
 
 
+class SortingVersion(LooseVersion):
+    """
+    Like LooseVersion, but provides a stable sort order even if different version schemes are used, e.g. numbers and
+    strings occur in even positions. This does not mean that the outcome will be semantically correct. Strings are
+    considered 'higher' than numbers.
+    """
+    def _cmp(self, other):
+        if self.version == other.version:
+            return 0
+        try:
+            if self.version < other.version:
+                return -1
+            if self.version > other.version:
+                return 1
+        except TypeError:
+            for a, b in zip(self.version, other.version):
+                if a == b:
+                    continue
+                if type(a) == type(b):
+                    if a < b:
+                        return -1
+                    if a > b:
+                        return 1
+                else:
+                    if isinstance(a, str):
+                        return 1
+                    if isinstance(b, str):
+                        return -1
+
+
 class DockerRegistryQuery(object):
     def __init__(self, client):
         self._client = client
@@ -248,12 +278,14 @@ class DockerRegistryQuery(object):
             self.refresh()
         return self._cache.get_repo_names()
 
-    def get_tag_names(self, repos=None):
+    def get_tag_names(self, repos=None, reverse_sort=False):
         """
         Returns a sorted list of available tags, optionally filtered by a set of repository names.
 
         :param repos: Optional repository name or list names to limit the output.
         :type repos: str | list[str] | tuple[str] | NoneType
+        :param reverse_sort: Revert the sort order.
+        :type reverse_sort: bool
         :return: List with tuples of repositories and tags.
         :rtype: list[(str, str)]
         """
@@ -263,7 +295,7 @@ class DockerRegistryQuery(object):
             repo_list = _str_or_list(repos)
         else:
             repo_list = None
-        return self._cache.get_tag_names(repo_list)
+        return self._cache.get_tag_names(repo_list, SortingVersion, reverse_sort)
 
     @property
     def cache(self):
