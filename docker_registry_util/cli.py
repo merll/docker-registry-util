@@ -149,9 +149,13 @@ def list_repo_names(query):
 
 def list_tag_names(query):
     result = query.get_tag_names(args.repo, args.reverse_sort)
-    repo_len = max([len(r[0]) for r in result])
-    for repo, tag_name in result:
-        print('{0:{1}}  {2}'.format(repo, repo_len, tag_name))
+    if args.image_names:
+        for repo, tag_name in result:
+            print('{0}/{1}:{2}'.format(args.registry, repo, tag_name))
+    else:
+        repo_len = max(len(r[0]) for r in result)
+        for repo, tag_name in result:
+            print('{0:{1}}  {2}'.format(repo, repo_len, tag_name))
     _show_count('tags', result)
 
 
@@ -251,6 +255,11 @@ parser_list_tags.add_argument('repo', nargs='*',
 parser_list_tags.add_argument('--reverse-sort', action='store_true', default=False,
                               dest='reverse_sort',
                               help="Reverts the sort order of tags within a repository.")
+parser_list_tags.add_argument('--image-names', action='store_true', default=False,
+                              dest='image_names',
+                              help="Instead of separating repository and tag in columns, puts a colon between the two "
+                                   "and prefixes it with the registry name so that it matches the format used for "
+                                   "Docker image references.")
 for subparser in [parser_query_tags, parser_remove_tags]:
     subparser.add_argument('--tags', '-t', nargs='*',
                            help="Tag names or version selectors. Versions can be specified as comparisons, e.g. "
