@@ -1,4 +1,6 @@
 import logging
+from itertools import zip_longest
+
 import re
 from distutils.version import LooseVersion
 
@@ -92,7 +94,7 @@ class SortingVersion(LooseVersion):
             if self.version > other.version:
                 return 1
         except TypeError:
-            for a, b in zip(self.version, other.version):
+            for a, b in zip_longest(self.version, other.version):
                 if a == b:
                     continue
                 if type(a) == type(b):
@@ -105,6 +107,10 @@ class SortingVersion(LooseVersion):
                         return 1
                     if isinstance(b, str):
                         return -1
+                    if a is None:
+                        return -1
+                    if b is None:
+                        return 1
 
 
 class DockerRegistryQuery(object):
