@@ -64,8 +64,8 @@ class DockerRegistryClient(object):
     def ping(self):
         return self._request('GET', '')
 
-    def get_catalog(self):
-        return self._request('GET', '_catalog')
+    def get_catalog(self, max_results):
+        return self._request('GET', '_catalog', params={'n' : max_results})
 
     def get_tags(self, name):
         return self._request('GET', name, 'tags', 'list')
