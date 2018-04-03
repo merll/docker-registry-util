@@ -118,6 +118,7 @@ class DockerRegistryQuery(object):
         self._client = client
         self._cache = ImageDigestCache()
         self._initialized = False
+        self.max_results = 500
 
     @property
     def client(self):
@@ -128,7 +129,7 @@ class DockerRegistryQuery(object):
         if self._initialized:
             log.info("Clearing.")
             self._cache.reset()
-        repos = self._client.get_catalog().json()['repositories']
+        repos = self._client.get_catalog(max_results=self.max_results).json()['repositories']
         log.info("Found %s repositories.", len(repos))
         for repo in repos:
             log.info("Checking repository '%s'.", repo)
