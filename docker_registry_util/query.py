@@ -2,7 +2,7 @@ import logging
 from itertools import zip_longest, groupby
 import re
 from distutils.version import LooseVersion
-
+from requests.exceptions import HTTPError
 from .digest import ContentDigest
 from .cache import ImageDigestCache
 
@@ -136,7 +136,11 @@ class DockerRegistryQuery(object):
                 log.info("No tags found for '%s', skipping.", repo)
                 continue
             for tag in tags:
-                manifest = self._client.head_manifest(repo, tag)
+                try:
+                    manifest = self._client.head_manifest(repo, tag)
+                except HTTPError:
+                    log.warning("Getting http error during request manifest: (repo=%s, tag=%s), skipping.", repo, tag)
+                    continue
                 digest = manifest.headers['Docker-Content-Digest']
                 log.debug("Registering digest for %s:%s - %s.", repo, tag, digest)
                 self._cache.add_image(repo, tag, ContentDigest.from_sha256(digest))
@@ -155,7 +159,11 @@ class DockerRegistryQuery(object):
             for tag in available_tags:
                 log.info("Checking filter match for %s:%s.", repo, tag)
                 if _any_tag_matches(tag_funcs, tag):
-                    manifest = self._client.head_manifest(repo, tag)
+                    try:
+                        manifest = self._client.head_manifest(repo, tag)
+                    except HTTPError:
+                        log.warning("Getting http error during request manifest: (repo=%s, tag=%s), skipping.", repo, tag)
+                        continue
                     digest = manifest.headers['Docker-Content-Digest']
                     log.debug("Registering digest for %s:%s - %s.", repo, tag, digest)
                     self._cache.update_image(repo, tag, ContentDigest.from_sha256(digest))
