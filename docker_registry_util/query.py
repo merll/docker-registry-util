@@ -123,12 +123,12 @@ class DockerRegistryQuery(object):
     def client(self):
         return self._client
 
-    def refresh(self):
+    def refresh(self, repos=None):
         log.info("Initializing cache.")
         if self._initialized:
             log.info("Clearing.")
             self._cache.reset()
-        repos = self._client.get_catalog().json()['repositories']
+        repos = self._client.get_catalog().json()['repositories'] if not repos else _str_or_list(repos)
         log.info("Found %s repositories.", len(repos))
         for repo in repos:
             log.info("Checking repository '%s'.", repo)
@@ -252,7 +252,7 @@ class DockerRegistryQuery(object):
             return True
 
         if not self._initialized:
-            self.refresh()
+            self.refresh(repos)
         included_filter = _generate_tag_funcs(tags)
         excluded_filter = _generate_tag_funcs(exclude_tags)
         tag_sets = dict()
@@ -296,7 +296,7 @@ class DockerRegistryQuery(object):
         :rtype: list[(str, str)]
         """
         if not self._initialized:
-            self.refresh()
+            self.refresh(repos)
         if repos:
             repo_list = _str_or_list(repos)
         else:
