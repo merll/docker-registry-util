@@ -52,10 +52,10 @@ class DockerRegistryRemover(object):
         client = self._query.client
         cache = self._query.cache
         tag_digests = self._query.select_tags(repos, tags, **kwargs)
-        for name, digest in tag_digests:
-            log.info("Removing digest %s.", digest)
+        for name, digest, tags in tag_digests:
+            log.info("Removing digest %s (tags: %s).", digest, tags)
             client.delete_manifest(name, digest.as_sha256())
-        digests_only = [i[1] for i in tag_digests]
+        digests_only = [digest for name, digest, tags in tag_digests]
         cache.remove_digests(digests_only)
         log.info("Deleted %s digests.", len(tag_digests))
         return tag_digests

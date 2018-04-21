@@ -1,6 +1,5 @@
 import logging
-from itertools import zip_longest
-
+from itertools import zip_longest, groupby
 import re
 from distutils.version import LooseVersion
 
@@ -251,6 +250,16 @@ class DockerRegistryQuery(object):
                     return False
             return True
 
+        def _group_digest(iterable):
+            result = []
+            key = lambda x: (x[0], x[2])
+            sorted_iterable = sorted(iterable, key=key)
+            for k, g in groupby(sorted_iterable, key=key):
+                # (repo, digest, [tags])
+                r_item = (k[0], k[1], [t for _, t, _ in list(g)])
+                result.append(r_item)
+            return result
+
         if not self._initialized:
             self.refresh()
         included_filter = _generate_tag_funcs(tags)
@@ -267,10 +276,13 @@ class DockerRegistryQuery(object):
             if partial_matches:
                 p_tags, p_digests = zip(*partial_matches)
                 tag_sets[repo] = set(p_tags)
-                test_digests.extend([(repo, digest) for digest in p_digests])
+                test_digests.extend([(repo, tag, digest) for tag, digest in partial_matches])
+
+        grouped_digest = _group_digest(test_digests)
+
         tested_digests = set()
-        return [(name, digest)
-                for name, digest in test_digests
+        return [(name, digest, tags)
+                for name, digest, tags in grouped_digest
                 if not (digest in tested_digests or tested_digests.add(digest)) and _complete_match(digest)]
 
     def get_repo_names(self):
