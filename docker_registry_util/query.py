@@ -1,9 +1,8 @@
 import logging
-from itertools import zip_longest
-
+from itertools import zip_longest, groupby
 import re
 from distutils.version import LooseVersion
-
+from requests.exceptions import HTTPError
 from .digest import ContentDigest
 from .cache import ImageDigestCache
 
@@ -123,12 +122,12 @@ class DockerRegistryQuery(object):
     def client(self):
         return self._client
 
-    def refresh(self):
+    def refresh(self, repos=None):
         log.info("Initializing cache.")
         if self._initialized:
             log.info("Clearing.")
             self._cache.reset()
-        repos = self._client.get_catalog().json()['repositories']
+        repos = self._client.get_catalog().json()['repositories'] if not repos else _str_or_list(repos)
         log.info("Found %s repositories.", len(repos))
         for repo in repos:
             log.info("Checking repository '%s'.", repo)
@@ -137,7 +136,11 @@ class DockerRegistryQuery(object):
                 log.info("No tags found for '%s', skipping.", repo)
                 continue
             for tag in tags:
-                manifest = self._client.head_manifest(repo, tag)
+                try:
+                    manifest = self._client.head_manifest(repo, tag)
+                except HTTPError:
+                    log.warning("Getting http error during request manifest: (repo=%s, tag=%s), skipping.", repo, tag)
+                    continue
                 digest = manifest.headers['Docker-Content-Digest']
                 log.debug("Registering digest for %s:%s - %s.", repo, tag, digest)
                 self._cache.add_image(repo, tag, ContentDigest.from_sha256(digest))
@@ -156,7 +159,11 @@ class DockerRegistryQuery(object):
             for tag in available_tags:
                 log.info("Checking filter match for %s:%s.", repo, tag)
                 if _any_tag_matches(tag_funcs, tag):
-                    manifest = self._client.head_manifest(repo, tag)
+                    try:
+                        manifest = self._client.head_manifest(repo, tag)
+                    except HTTPError:
+                        log.warning("Getting http error during request manifest: (repo=%s, tag=%s), skipping.", repo, tag)
+                        continue
                     digest = manifest.headers['Docker-Content-Digest']
                     log.debug("Registering digest for %s:%s - %s.", repo, tag, digest)
                     self._cache.update_image(repo, tag, ContentDigest.from_sha256(digest))
@@ -251,8 +258,18 @@ class DockerRegistryQuery(object):
                     return False
             return True
 
+        def _group_digest(iterable):
+            result = []
+            key = lambda x: (x[0], x[2])
+            sorted_iterable = sorted(iterable, key=key)
+            for k, g in groupby(sorted_iterable, key=key):
+                # (repo, digest, [tags])
+                r_item = (k[0], k[1], [t for _, t, _ in list(g)])
+                result.append(r_item)
+            return result
+
         if not self._initialized:
-            self.refresh()
+            self.refresh(repos)
         included_filter = _generate_tag_funcs(tags)
         excluded_filter = _generate_tag_funcs(exclude_tags)
         tag_sets = dict()
@@ -267,10 +284,13 @@ class DockerRegistryQuery(object):
             if partial_matches:
                 p_tags, p_digests = zip(*partial_matches)
                 tag_sets[repo] = set(p_tags)
-                test_digests.extend([(repo, digest) for digest in p_digests])
+                test_digests.extend([(repo, tag, digest) for tag, digest in partial_matches])
+
+        grouped_digest = _group_digest(test_digests)
+
         tested_digests = set()
-        return [(name, digest)
-                for name, digest in test_digests
+        return [(name, digest, tags)
+                for name, digest, tags in grouped_digest
                 if not (digest in tested_digests or tested_digests.add(digest)) and _complete_match(digest)]
 
     def get_repo_names(self):
@@ -296,7 +316,7 @@ class DockerRegistryQuery(object):
         :rtype: list[(str, str)]
         """
         if not self._initialized:
-            self.refresh()
+            self.refresh(repos)
         if repos:
             repo_list = _str_or_list(repos)
         else:

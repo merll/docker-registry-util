@@ -170,8 +170,9 @@ def query_repos(query):
 def query_tags(query):
     repo_len = max(map(len, args.repo))
     result = query.select_tags(args.repo, **_get_tag_args())
-    for repo, digest in result:
-        print('{0:{1}}  {2}'.format(repo, repo_len, digest))
+    sorted_by_tags_result = sorted(result, key=lambda x: x[2])
+    for repo, digest, tags in sorted_by_tags_result:
+        print('{0:{1}} {2} {3}'.format(repo, repo_len, digest, tags))
     _show_count('selected digests', result)
 
 
